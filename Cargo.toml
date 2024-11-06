@@ -1,0 +1,47 @@
+[package]
+name = "centripetal"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+dev = [
+    "bevy/bevy_dev_tools",
+    "bevy/bevy_gizmos",
+    "bevy/debug_glam_assert",
+    "bevy/file_watcher",
+    "avian2d/debug-plugin",
+]
+
+[dependencies.avian2d]
+version = "0.1"
+default-features = false
+features = [
+    "2d",
+    "parry-f32",
+    "parallel",
+    "simd",
+    "bevy_scene",
+]
+
+[dependencies.bevy]
+version = "0.14"
+default-features = false
+features = [
+    "bevy_scene",
+    "bevy_sprite",
+    "bevy_state",
+    "bevy_winit",
+    "multi_threaded",
+]
+
+[dependencies.bevy_mod_picking]
+version = "0.20"
+default-features = false
+
+[dependencies.leafwing-input-manager]
+version = "0.15"
+default-features = false
+features = [
+    "mouse",
+    "keyboard",
+]
