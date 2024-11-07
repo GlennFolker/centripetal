@@ -53,6 +53,7 @@ pub fn update_collider_widget(
                 LevelColliderWidget { edit: LevelColliderEdit::None },
                 TransformBundle { local: Transform::from_xyz(0.0, 0.0, 1.0), ..default() },
                 src,
+                Pickable::default(),
                 On::<Pointer<Click>>::run(click_collider_widget),
                 On::<Pointer<DragStart>>::run(drag_start_collider_widget),
                 On::<Pointer<Drag>>::run(drag_collider_widget),
@@ -124,9 +125,10 @@ pub fn click_collider_widget(
 }
 
 pub fn drag_start_collider_widget(
+    mut commands: Commands,
     event: Listener<Pointer<DragStart>>,
     camera: Query<(&GlobalTransform, &Camera), With<MainCamera>>,
-    mut widgets: Query<(&mut LevelColliderWidget, &Parent)>,
+    mut widgets: Query<(Entity, &mut LevelColliderWidget, &Parent)>,
     colliders: Query<(&GlobalTransform, &LevelCollider)>,
 ) {
     if event.button != PointerButton::Primary {
@@ -137,7 +139,7 @@ pub fn drag_start_collider_widget(
     let Some(pos) = event.event.hit.position else { return };
 
     let Ok((&camera_trns, camera)) = camera.get_single() else { return };
-    let Ok((mut widget, parent)) = widgets.get_mut(target) else { return };
+    let Ok((widget_entity, mut widget, parent)) = widgets.get_mut(target) else { return };
     let Ok((&trns, collider)) = colliders.get(parent.get()) else { return };
 
     let trns = trns.translation();
@@ -160,6 +162,8 @@ pub fn drag_start_collider_widget(
     } else {
         widget.edit = LevelColliderEdit::New(selected - len, v_viewport);
     }
+
+    commands.entity(widget_entity).insert(Pickable::IGNORE);
 }
 
 pub fn drag_collider_widget(event: Listener<Pointer<Drag>>, mut widgets: Query<&mut LevelColliderWidget>) {
@@ -175,13 +179,14 @@ pub fn drag_collider_widget(event: Listener<Pointer<Drag>>, mut widgets: Query<&
 }
 
 pub fn drag_end_collider_widget(
+    mut commands: Commands,
     event: Listener<Pointer<DragEnd>>,
     camera: Query<(&GlobalTransform, &Camera), With<MainCamera>>,
-    mut widgets: Query<(&mut LevelColliderWidget, &Parent)>,
+    mut widgets: Query<(Entity, &mut LevelColliderWidget, &Parent)>,
     mut colliders: Query<&mut LevelCollider>,
 ) {
     let target = event.target();
-    let Ok((mut widget, parent)) = widgets.get_mut(target) else { return };
+    let Ok((widget_entity, mut widget, parent)) = widgets.get_mut(target) else { return };
     let Ok(mut collider) = colliders.get_mut(parent.get()) else { return };
 
     let Ok((&camera_trns, camera)) = camera.get_single() else { return };
@@ -199,4 +204,5 @@ pub fn drag_end_collider_widget(
     }
 
     widget.edit = LevelColliderEdit::None;
+    commands.entity(widget_entity).insert(Pickable::default());
 }
