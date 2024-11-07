@@ -10,18 +10,14 @@ pub struct LevelCollider {
 impl Default for LevelCollider {
     #[inline]
     fn default() -> Self {
-        Self {
-            vertices: vec![vec2(-5.0, -5.0), vec2(5.0, -5.0), vec2(5.0, 5.0), vec2(-5.0, 5.0)],
-        }
+        Self { vertices: vec![vec2(-5.0, -5.0), vec2(5.0, -5.0), vec2(5.0, 5.0), vec2(-5.0, 5.0)] }
     }
 }
 
 impl From<&LevelCollider> for Collider {
     fn from(value: &LevelCollider) -> Self {
         let vertices = value.vertices.clone();
-        let indices = (0..vertices.len() as u32)
-            .map(|i| [i, (i + 1) % vertices.len() as u32])
-            .collect();
+        let indices = (0..vertices.len() as u32).map(|i| [i, (i + 1) % vertices.len() as u32]).collect();
 
         Self::polyline(vertices, Some(indices))
     }

@@ -1,8 +1,8 @@
+pub mod collider;
+
 use bevy::prelude::*;
 
 use crate::world::collider::update_level_collider;
-
-pub mod collider;
 
 pub struct WorldPlugin;
 impl Plugin for WorldPlugin {

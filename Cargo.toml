@@ -30,6 +30,7 @@ features = [
     "bevy_scene",
     "bevy_sprite",
     "bevy_state",
+    "bevy_ui",
     "bevy_winit",
     "multi_threaded",
 ]
@@ -37,11 +38,16 @@ features = [
 [dependencies.bevy_mod_picking]
 version = "0.20"
 default-features = false
+features = [
+    "bevy_picking_ui",
+]
 
 [dependencies.leafwing-input-manager]
 version = "0.15"
 default-features = false
 features = [
-    "mouse",
+    "asset",
+    "ui",
     "keyboard",
+    "mouse",
 ]

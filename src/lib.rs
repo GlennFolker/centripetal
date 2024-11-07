@@ -1,5 +1,6 @@
 #[cfg(feature = "dev")]
 pub mod editor;
+pub mod input;
 pub mod picking;
 pub mod world;
 
@@ -13,6 +14,9 @@ use crate::{picking::Avian2dBackend, world::WorldPlugin};
 
 #[derive(Copy, Clone, Component)]
 pub struct MainCamera;
+
+#[derive(Copy, Clone, Component)]
+pub struct RootUi;
 
 #[inline(always)]
 pub fn run() {
@@ -34,10 +38,13 @@ pub fn run() {
 
 pub fn startup(mut commands: Commands) {
     commands.spawn((MainCamera, Camera2dBundle {
-        projection: OrthographicProjection {
-            scaling_mode: ScalingMode::FixedHorizontal(80.0),
-            ..default()
-        },
+        camera: Camera { hdr: true, ..default() },
+        projection: OrthographicProjection { scaling_mode: ScalingMode::FixedHorizontal(80.0), ..default() },
+        ..default()
+    }));
+
+    commands.spawn((RootUi, NodeBundle {
+        style: Style { margin: UiRect::all(Val::Percent(100.0)), padding: UiRect::all(Val::Px(0.0)), ..default() },
         ..default()
     }));
 }

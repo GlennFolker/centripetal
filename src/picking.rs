@@ -21,10 +21,8 @@ pub fn update_hits(
     let Some(spatial_query) = spatial_query else { return };
     for (&id, loc) in &pointers {
         let Some(loc) = loc.location() else { continue };
-        let Some((camera_entity, camera, camera_trns, camera_ortho)) = cameras
-            .iter()
-            .filter(|&(_, camera, _, _)| camera.is_active)
-            .find(|&(_, camera, _, _)| {
+        let Some((camera_entity, camera, camera_trns, camera_ortho)) =
+            cameras.iter().filter(|&(_, camera, _, _)| camera.is_active).find(|&(_, camera, _, _)| {
                 camera
                     .target
                     .normalize(Some(match primary_window.get_single() {
@@ -59,10 +57,7 @@ pub fn update_hits(
             };
 
             let trns = trns.translation();
-            picks.push((
-                e,
-                HitData::new(camera_entity, -camera_ortho.near - trns.z, Some(pos.extend(trns.z)), None),
-            ));
+            picks.push((e, HitData::new(camera_entity, -camera_ortho.near - trns.z, Some(pos.extend(trns.z)), None)));
             false
         });
 
