@@ -12,17 +12,31 @@ path = "src/main.rs"
 
 [dependencies]
 hephae = "0.7"
+mimalloc-redirect = "0.1"
+
+[dependencies.avian2d]
+version = "0.2"
+default-features = false
+features = [
+    "2d",
+    "bevy_picking",
+    "parallel",
+    "f32",
+    "parry-f32",
+    "simd",
+    "serialize",
+]
 
 [dependencies.bevy]
 version = "0.15"
 default-features = false
 features = [
-    "android-game-activity",
-    "android_shared_stdcxx",
     "multi_threaded",
+    "serialize",
     "bevy_core_pipeline",
+    "bevy_picking",
     "bevy_winit",
 ]
 
-[build-dependencies]
-vcpkg = "0.2"
+[patch.crates-io]
+mimalloc-redirect = { path = "../mimalloc-redirect" }
