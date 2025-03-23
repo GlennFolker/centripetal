@@ -1,6 +1,4 @@
-use std::process::Termination;
-
-use avian2d::PhysicsPlugins;
+use avian2d::prelude::*;
 use bevy::prelude::*;
 use mimalloc_redirect::MiMalloc;
 
@@ -15,7 +13,11 @@ static ALLOC: MiMalloc = MiMalloc;
 #[require(Camera2d)]
 pub struct PrimaryCamera;
 
-pub fn run() -> impl Termination {
+#[cfg_attr(target_family = "wasm", wasm_bindgen::prelude::wasm_bindgen(start))]
+pub fn run() {
+    #[cfg(target_family = "wasm")]
+    console_log::init().expect("Couldn't initialize logger");
+
     App::new()
         .add_plugins((
             DefaultPlugins
@@ -37,7 +39,7 @@ pub fn run() -> impl Termination {
             hephae::ui::<(), ()>(),
         ))
         .add_systems(Startup, on_startup)
-        .run()
+        .run();
 }
 
 fn on_startup(mut commands: Commands) {

@@ -25,20 +25,25 @@ features = [
     "f32",
     "parry-f32",
     "simd",
-    "serialize",
 ]
 
 [dependencies.bevy]
 version = "0.15"
 default-features = false
 features = [
+    "android-game-activity",
     "multi_threaded",
-    "serialize",
+    "webgl2",
     "bevy_asset",
     "bevy_core_pipeline",
     "bevy_picking",
     "bevy_winit",
 ]
 
+[target.'cfg(target_family = "wasm")'.dependencies]
+console_log = "1"
+wasm-bindgen = "0.2"
+
 [patch.crates-io]
+hephae = { path = "../hephae" }
 mimalloc-redirect = { path = "../mimalloc-redirect" }

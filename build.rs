@@ -23,7 +23,6 @@ fn main() -> IoResult<()> {
             })
             .as_deref()
         {
-            Ok("0" | "false" | "off" | "no") => true,
             Ok("1" | "true" | "on" | "yes") => false,
             _ => true,
         } &&

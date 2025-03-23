@@ -1,5 +1,3 @@
-use std::process::Termination;
-
-fn main() -> impl Termination {
+fn main() {
     centripetal::run()
 }
