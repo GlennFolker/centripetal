@@ -1,5 +1,5 @@
 use avian2d::prelude::*;
-use bevy::prelude::*;
+use bevy::{log::LogPlugin, prelude::*};
 use mimalloc_redirect::MiMalloc;
 
 pub mod persist;
@@ -31,7 +31,8 @@ pub fn run() {
                         ..default()
                     }),
                     ..default()
-                }),
+                })
+                .add_after::<LogPlugin>(|_: &mut App| info!("Using MiMalloc {}", MiMalloc::get_version())),
             PhysicsPlugins::default(),
             hephae::render::<(), ()>(),
             hephae::locales::<(), ()>(),
