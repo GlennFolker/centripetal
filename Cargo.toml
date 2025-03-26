@@ -12,7 +12,10 @@ name = "centripetal-desktop"
 path = "src/main.rs"
 
 [dependencies]
+async-fs = "2"
+directories = "6"
 hephae = "0.7"
+serde = "1"
 
 [dependencies.avian2d]
 version = "0.2"
@@ -36,6 +39,7 @@ features = [
     "bevy_asset",
     "bevy_core_pipeline",
     "bevy_picking",
+    "bevy_state",
     "bevy_winit",
 ]
 
@@ -43,9 +47,12 @@ features = [
 version = "0.16"
 default-features = false
 features = [
-    "asset",
     "keyboard",
 ]
+
+[dependencies.postcard]
+version = "1"
+default-features = false
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
 mimalloc-redirect = "0.1"
