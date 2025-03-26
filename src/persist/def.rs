@@ -2,6 +2,7 @@ use std::{
     borrow::Borrow,
     future::poll_fn,
     io::{Error as IoError, ErrorKind as IoErrorKind, Result as IoResult},
+    mem::MaybeUninit,
     pin::Pin,
     ptr::slice_from_raw_parts_mut,
 };
@@ -60,6 +61,11 @@ impl<W: AsyncWrite + ConditionalSend> PersistWriter<W> {
 
             Ok(())
         }
+    }
+
+    pub fn close(self: Pin<&mut Self>) -> impl ConditionalSendFuture<Output = IoResult<()>> {
+        let mut writer = unsafe { self.map_unchecked_mut(|s| &mut s.0) };
+        poll_fn(move |ctx| writer.as_mut().poll_close(ctx))
     }
 
     pub fn ser(
@@ -244,6 +250,25 @@ impl<T: Persist> Persist for Vec<T> {
     async fn write<W: AsyncWrite + ConditionalSend>(&self, mut w: Pin<&mut PersistWriter<W>>) -> IoResult<()> {
         w!(w, usize: self.len())?;
         for item in &self[..] {
+            w!(w, T: item)?
+        }
+
+        Ok(())
+    }
+}
+
+impl<const N: usize, T: Persist> Persist for [T; N] {
+    async fn read<R: AsyncRead + ConditionalSend>(mut r: Pin<&mut PersistReader<R>>) -> IoResult<Self> {
+        let mut array: [MaybeUninit<T>; N] = [const { MaybeUninit::uninit() }; N];
+        for i in 0..N {
+            array[i].write(r!(r, T)?);
+        }
+
+        Ok(unsafe { MaybeUninit::array_assume_init(array) })
+    }
+
+    async fn write<W: AsyncWrite + ConditionalSend>(&self, mut w: Pin<&mut PersistWriter<W>>) -> IoResult<()> {
+        for item in self {
             w!(w, T: item)?
         }
 

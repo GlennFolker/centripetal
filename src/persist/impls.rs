@@ -5,7 +5,7 @@ use bevy::{
     tasks::futures_lite::{AsyncRead, AsyncWrite},
     utils::ConditionalSend,
 };
-use serde::{Deserialize, Serialize};
+use serde::{de::Deserialize, ser::Serialize};
 
 use crate::persist::{Persist, PersistReader, PersistWriter};
 

@@ -1,4 +1,4 @@
-#![feature(if_let_guard, impl_trait_in_assoc_type)]
+#![feature(if_let_guard, impl_trait_in_assoc_type, let_chains, maybe_uninit_array_assume_init)]
 
 use avian2d::prelude::*;
 use bevy::prelude::*;
@@ -24,7 +24,13 @@ pub struct PrimaryCamera;
 #[cfg_attr(target_family = "wasm", wasm_bindgen::prelude::wasm_bindgen(start))]
 pub fn run() {
     App::new()
-        .add_plugins((DefaultPlugins, PhysicsPlugins::default(), hephae! { .. }, ControlPlugins))
+        .add_plugins((
+            DefaultPlugins,
+            PhysicsPlugins::default(),
+            hephae! { .. },
+            ControlPlugins,
+            StoragePlugin,
+        ))
         .add_systems(Startup, on_startup)
         .run();
 }
