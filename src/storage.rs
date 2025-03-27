@@ -1,21 +1,20 @@
 use std::{
-    io::{Error as IoError, ErrorKind as IoErrorKind, ErrorKind, Result as IoResult},
+    io::{Error as IoError, ErrorKind as IoErrorKind, Result as IoResult},
     path::{Path, PathBuf},
     pin::{pin, Pin},
 };
 
-use async_channel::Receiver;
-use async_fs::File;
+use async_fs::{create_dir_all, File};
 use bevy::{
     prelude::*,
     tasks::{
-        futures_lite::{
+        block_on, futures_lite::{
             io::{BufReader, BufWriter}, AsyncRead,
             AsyncWrite,
-        },
-        IoTaskPool,
+        }, IoTaskPool,
+        Task,
     },
-    utils::{ConditionalSend, ConditionalSendFuture},
+    utils::{futures::check_ready, ConditionalSend, ConditionalSendFuture},
 };
 use directories::ProjectDirs;
 
@@ -67,7 +66,9 @@ impl LocalStorage {
         .join(file);
 
         async move {
+            create_dir_all(path.parent().unwrap()).await?;
             let file = File::create(path).await?;
+
             Ok(PersistWriter::new(BufWriter::new(file)))
         }
     }
@@ -93,14 +94,10 @@ impl LocalStorage {
 impl Default for LocalStorage {
     fn default() -> Self {
         let dirs = ProjectDirs::from("com.github", "gygl", "Centripetal").expect("couldn't get project data directories");
-        let storage = Self {
+        Self {
             settings_dir: dirs.preference_dir().into(),
             saves_dir: dirs.data_dir().join("saves"),
-        };
-
-        std::fs::create_dir_all(&storage.settings_dir).unwrap_or_else(|e| panic!("Couldn't create settings directory: {e}"));
-        std::fs::create_dir_all(&storage.saves_dir).unwrap_or_else(|e| panic!("Couldn't create saves directory: {e}"));
-        storage
+        }
     }
 }
 
@@ -154,53 +151,29 @@ impl Plugin for StoragePlugin {
 }
 
 fn load_input_pref(
+    mut commands: Commands,
     storage: Res<LocalStorage>,
-    mut pref: ResMut<InputKeyboardPref>,
-    mut first: Local<bool>,
-    mut channel: Local<Option<Receiver<IoResult<(InputKeyboardPref, bool)>>>>,
+    mut channel: Local<(bool, Option<Task<IoResult<InputKeyboardPref>>>)>,
 ) {
-    if !std::mem::replace(&mut first, true) {
-        let (sender, receiver) = async_channel::bounded(1);
-        *channel = Some(receiver);
-
-        let sys = storage.read_keyboard_pref();
-        IoTaskPool::get()
-            .spawn(async move {
-                let result = match sys.await {
-                    Ok(pref) => Ok((pref, false)),
-                    Err(e) if e.kind() == ErrorKind::NotFound => {
-                        info!("Keyboard input preference file not found; creating a new one.");
-                        Ok((default(), true))
-                    }
-                    Err(e) => Err(e),
-                };
-
-                _ = sender.send(result).await;
-            })
-            .detach()
+    let (first, task) = &mut *channel;
+    if !std::mem::replace(first, true) {
+        *task = Some(IoTaskPool::get().spawn(storage.read_keyboard_pref()))
     }
 
-    if let Some(recv) = channel.as_ref() &&
-        let Ok(new_pref) = recv.try_recv()
+    if let Some(task) = task &&
+        task.is_finished()
     {
-        *channel = None;
-        match new_pref {
-            Ok((new_pref, create_new)) => {
-                *pref = new_pref;
-                if create_new {
-                    let sys = storage.write_keyboard_pref(new_pref);
-                    IoTaskPool::get()
-                        .spawn(async move {
-                            if let Err(e) = sys.await {
-                                error!("Couldn't write keyboard input preference file: {e}")
-                            } else {
-                                info!("Successfully written keyboard input preference file!")
-                            }
-                        })
-                        .detach()
+        let pref = check_ready(task)
+            .expect("`is_finished()` implies Poll::Ready")
+            .unwrap_or_else(|e| {
+                if e.kind() != IoErrorKind::NotFound {
+                    error!("Couldn't read keyboard input preference file: {e}")
                 }
-            }
-            Err(e) => error!("Couldn't load keyboard input preference: {e}"),
-        }
+
+                default()
+            });
+
+        commands.insert_resource(pref);
+        IoTaskPool::get().spawn(storage.write_keyboard_pref(pref)).detach()
     }
 }

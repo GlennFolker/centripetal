@@ -1,12 +1,16 @@
-#![feature(if_let_guard, impl_trait_in_assoc_type, let_chains, maybe_uninit_array_assume_init)]
+#![feature(
+    if_let_guard,
+    impl_trait_in_assoc_type,
+    let_chains,
+    maybe_uninit_array_assume_init,
+    maybe_uninit_slice
+)]
 
 use avian2d::prelude::*;
 use bevy::prelude::*;
 use hephae::prelude::*;
-#[cfg(not(target_family = "wasm"))]
 use mimalloc_redirect::MiMalloc;
 
-#[cfg(not(target_family = "wasm"))]
 #[global_allocator]
 static ALLOC: MiMalloc = MiMalloc;
 
@@ -21,7 +25,6 @@ pub mod persist;
 #[require(Camera2d)]
 pub struct PrimaryCamera;
 
-#[cfg_attr(target_family = "wasm", wasm_bindgen::prelude::wasm_bindgen(start))]
 pub fn run() {
     App::new()
         .add_plugins((

@@ -12,8 +12,16 @@ use bevy::{
     utils::{ConditionalSend, ConditionalSendFuture},
 };
 use postcard::ser_flavors::Flavor;
+use serde::ser::Serialize;
 
 use crate::persist::PersistSerializer;
+
+#[macro_export]
+macro_rules! w {
+    ($writer:expr, $type:ty: $target:expr) => {
+        $crate::persist::write::<_, $type>($writer.as_mut(), $target).await
+    };
+}
 
 #[macro_export]
 macro_rules! r {
@@ -23,9 +31,21 @@ macro_rules! r {
 }
 
 #[macro_export]
-macro_rules! w {
+macro_rules! ser {
     ($writer:expr, $type:ty: $target:expr) => {
-        $crate::persist::write::<_, $type>($writer.as_mut(), $target).await
+        $crate::persist::serialize::<_, $type>($writer.as_mut(), $target).await
+    };
+}
+
+#[macro_export]
+macro_rules! de {
+    ($reader:expr, $type:ty) => {
+        $reader
+            .as_mut()
+            .de(&mut ::std::vec::Vec::new(), |de| {
+                <$type as ::serde::de::Deserialize>::deserialize(de)
+            })
+            .await
     };
 }
 
@@ -38,6 +58,18 @@ pub fn write<W: AsyncWrite + ConditionalSend, T: Persist>(
     async move {
         let value = value.borrow();
         T::write(value, writer).await
+    }
+}
+
+#[doc(hidden)]
+#[inline(always)]
+pub fn serialize<W: AsyncWrite + ConditionalSend, T: Serialize>(
+    writer: Pin<&mut PersistWriter<W>>,
+    value: impl Borrow<T> + ConditionalSend,
+) -> impl ConditionalSendFuture<Output = IoResult<()>> {
+    async move {
+        let value = value.borrow();
+        writer.ser(|ser| T::serialize(value, ser)).await
     }
 }
 
@@ -261,7 +293,15 @@ impl<const N: usize, T: Persist> Persist for [T; N] {
     async fn read<R: AsyncRead + ConditionalSend>(mut r: Pin<&mut PersistReader<R>>) -> IoResult<Self> {
         let mut array: [MaybeUninit<T>; N] = [const { MaybeUninit::uninit() }; N];
         for i in 0..N {
-            array[i].write(r!(r, T)?);
+            match r!(r, T) {
+                Ok(e) => {
+                    array[i].write(e);
+                }
+                Err(e) => {
+                    unsafe { array[0..i].assume_init_drop() }
+                    return Err(e)
+                }
+            }
         }
 
         Ok(unsafe { MaybeUninit::array_assume_init(array) })
