@@ -1,5 +1,5 @@
 use std::{
-    io::{Error as IoError, ErrorKind as IoErrorKind, Result as IoResult},
+    io::{ErrorKind as IoErrorKind, Result as IoResult},
     path::{Path, PathBuf},
     pin::{pin, Pin},
 };
@@ -8,7 +8,7 @@ use async_fs::{create_dir_all, File};
 use bevy::{
     prelude::*,
     tasks::{
-        block_on, futures_lite::{
+        futures_lite::{
             io::{BufReader, BufWriter}, AsyncRead,
             AsyncWrite,
         }, IoTaskPool,
@@ -101,24 +101,11 @@ impl Default for LocalStorage {
     }
 }
 
-#[derive(Resource, Copy, Clone, Debug)]
+#[derive(Persist, Resource, Copy, Clone, Debug)]
+#[persist(version = 0)]
 pub struct InputKeyboardPref {
     /// Up-down-left-right, defaults to WSAD.
     pub movement: [KeyCode; 4],
-}
-
-impl Persist for InputKeyboardPref {
-    async fn read<R: AsyncRead + ConditionalSend>(mut r: Pin<&mut PersistReader<R>>) -> IoResult<Self> {
-        match r!(r, u16)? {
-            0 => <Self as PersistVersion<0>>::read_versioned(r).await,
-            v => Err(IoError::new(IoErrorKind::InvalidData, format!("Invalid version: {v}."))),
-        }
-    }
-
-    async fn write<W: AsyncWrite + ConditionalSend>(&self, mut w: Pin<&mut PersistWriter<W>>) -> IoResult<()> {
-        w!(w, u16: 0)?;
-        <Self as PersistVersion<0>>::write_versioned(self, w).await
-    }
 }
 
 impl PersistVersion<0> for InputKeyboardPref {

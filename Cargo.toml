@@ -12,7 +12,8 @@ name = "centripetal-desktop"
 path = "src/main.rs"
 
 [dependencies]
-async-channel = "2"
+centripetal-macros = { path = "macros" }
+
 async-fs = "2"
 directories = "6"
 hephae = "0.7"

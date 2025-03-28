@@ -11,6 +11,7 @@ use bevy::{
     tasks::futures_lite::{AsyncRead, AsyncWrite},
     utils::{ConditionalSend, ConditionalSendFuture},
 };
+pub use centripetal_macros::Persist;
 use postcard::ser_flavors::Flavor;
 use serde::ser::Serialize;
 
